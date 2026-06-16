@@ -166,7 +166,8 @@ The `output/` folder is ignored by Git because it contains generated runtime dat
 Run unit tests:
 
 ```powershell
-pytest
+pip install -r requirements-dev.txt
+python -m pytest tests
 ```
 
 GitHub Actions also runs the unit tests on push and pull request.
