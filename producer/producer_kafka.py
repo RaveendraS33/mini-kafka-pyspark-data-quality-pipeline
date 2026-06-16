@@ -1,5 +1,7 @@
 import argparse
 import json
+import logging
+import os
 import time
 from typing import Iterable
 
@@ -11,8 +13,11 @@ except ImportError:
     from producer.producer import add_bad_values, create_good_record
 
 
-DEFAULT_BOOTSTRAP_SERVERS = "localhost:9092"
-DEFAULT_TOPIC = "transactions"
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+logger = logging.getLogger(__name__)
+
+DEFAULT_BOOTSTRAP_SERVERS = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
+DEFAULT_TOPIC = os.getenv("KAFKA_TOPIC", "transactions")
 
 
 def build_kafka_producer(bootstrap_servers: str) -> KafkaProducer:
@@ -68,7 +73,7 @@ def stream_records_to_kafka(
                 sent_count += 1
 
             producer.flush()
-            print(f"Batch {batch_number}: sent {sent_count} records to topic '{topic}'")
+            logger.info("Batch %s: sent %s records to topic '%s'", batch_number, sent_count, topic)
             time.sleep(sleep_seconds)
     finally:
         producer.close()
@@ -78,10 +83,10 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Publish synthetic transactions to Kafka.")
     parser.add_argument("--topic", default=DEFAULT_TOPIC)
     parser.add_argument("--bootstrap-servers", default=DEFAULT_BOOTSTRAP_SERVERS)
-    parser.add_argument("--batches", type=int, default=10)
-    parser.add_argument("--records-per-batch", type=int, default=10)
-    parser.add_argument("--bad-records-per-batch", type=int, default=3)
-    parser.add_argument("--sleep-seconds", type=float, default=1)
+    parser.add_argument("--batches", type=int, default=int(os.getenv("PRODUCER_BATCHES", "10")))
+    parser.add_argument("--records-per-batch", type=int, default=int(os.getenv("PRODUCER_RECORDS_PER_BATCH", "10")))
+    parser.add_argument("--bad-records-per-batch", type=int, default=int(os.getenv("PRODUCER_BAD_RECORDS_PER_BATCH", "3")))
+    parser.add_argument("--sleep-seconds", type=float, default=float(os.getenv("PRODUCER_SLEEP_SECONDS", "1")))
     return parser.parse_args()
 
 
